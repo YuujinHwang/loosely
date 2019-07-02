@@ -1,4 +1,4 @@
-function [F, G] = update_F(ins, imu)
+function [F, G] = update_F(ins, imu, vbf)
 %LC_KF_F : Pre-calculate Transition Matrix F
 %          kf - Kalman Filter Object
 %               x - State Vector (18x1)
@@ -43,23 +43,33 @@ Frv = zeros(3);
 % Frr = ins.CTMbn*skew(ins.w)*ins.CTMbn';
 Frr = zeros(3);
 
+%% VBF Misalignment Matrices
+Fvbvb = skew(vbf.CTMab*ins.w);
+Fvbr = -skew(vbf.vb)*skew(vbf.CTMab*ins.w)+skew(vbf.CTMab*ins.f);
+Fvbdf = vbf.CTMab;
+Fvbdw = -skew(vbf.vb)*vbf.CTMab;
+
 %% Foam Transition Matrix F
 O = zeros(3);
 
 %%%%%%%%%%%%%%CHECK CHECK CHECK 
-F = [ Fpp,      Fpv,        Fpr,        O,           O,          O;
-      Fvp,      Fvv,        Fvr,        ins.CTMbn,   O,          O;
-      Frp,      Frv,        Frr,        O,           -ins.CTMbn,     O;
-      O,        O,          O,          O,           O,          O;
-      O,        O,          O,          O,           O,          O;
-      O,        O,          O,          O,           O,          O; ];
+F = [ Fpp,      Fpv,        Fpr,        O,          O,          O,     O,      O;
+      Fvp,      Fvv,        Fvr,        ins.CTMbn,  O,          O,     O,      O;
+      Frp,      Frv,        Frr,        O,          -ins.CTMbn, O,     O,      O;
+      O,        O,          O,          O,          O,          O,     O,      O;
+      O,        O,          O,          O,          O,          O,     O,      O;
+      O,        O,          O,          O,          O,          O,     O,      O;
+      O,        O,          O,          Fvbdf,      Fvbdw,      O,     Fvbvb,  Fvbr;
+      O,        O,          O,          O,          O,          O,     O,      O; ];
   
 G = [  O,       O,          O,          O;
        ins.CTMbn,  O,       O,          O;
        O,       -ins.CTMbn,  O,          O;
        O,       O,          eye(3),     O;
        O,       O,          O,          eye(3);
-       O,       O,          O,          O ]; % Q order -> Acc std, Gyro std, Vel Random Walk, Ang Random Walk, 
+       O,       O,          O,          O;
+       vbf.CTMab,       O,          O,          O;
+       O,       O,          O,          O; ]; % Q order -> Acc std, Gyro std, Vel Random Walk, Ang Random Walk, 
    
 end
 
