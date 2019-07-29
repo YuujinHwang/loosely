@@ -44,10 +44,13 @@ Frv = zeros(3);
 Frr = zeros(3);
 
 %% VBF Misalignment Matrices
-Fvbvb = skew(vbf.CTMab*ins.w);
-Fvbr = -skew(vbf.vb)*skew(vbf.CTMab*ins.w)+skew(vbf.CTMab*ins.f);
-Fvbdf = vbf.CTMab;
-Fvbdw = -skew(vbf.vb)*vbf.CTMab;
+% Fvbvb = -skew(vbf.CTMab*ins.w);
+% Fvbr = skew(vbf.v)*skew(vbf.CTMab*ins.w)+skew(vbf.CTMab*ins.f);
+% Fvbdf = vbf.CTMab;
+% Fvbdw = -skew(vbf.v)*vbf.CTMab;
+
+Fvbdf = zeros(3);
+Fvbdw = zeros(3);
 
 %% Foam Transition Matrix F
 O = zeros(3);
@@ -59,18 +62,44 @@ F = [ Fpp,      Fpv,        Fpr,        O,          O,          O,     O,      O
       O,        O,          O,          O,          O,          O,     O,      O;
       O,        O,          O,          O,          O,          O,     O,      O;
       O,        O,          O,          O,          O,          O,     O,      O;
-      O,        O,          O,          Fvbdf,      Fvbdw,      O,     Fvbvb,  Fvbr;
+      O,        O,          O,          O,          O,          O,     O,      O;
       O,        O,          O,          O,          O,          O,     O,      O; ];
+
+% F = [ Fpp,      Fpv,        Fpr,        O,          O,          O,     O;
+%       Fvp,      Fvv,        Fvr,        ins.CTMbn,  O,          O,     O;
+%       Frp,      Frv,        Frr,        O,          -ins.CTMbn, O,     O;
+%       O,        O,          O,          O,          O,          O,     O;
+%       O,        O,          O,          O,          O,          O,     O;
+%       O,        O,          O,          O,          O,          O,     O;
+%       O,        O,          O,          O,          O,          O,     O; ];
   
-G = [  O,       O,          O,          O;
-       ins.CTMbn,  O,       O,          O;
-       O,       -ins.CTMbn,  O,          O;
-       O,       O,          eye(3),     O;
-       O,       O,          O,          eye(3);
-       O,       O,          O,          O;
-       vbf.CTMab,       O,          O,          O;
-       O,       O,          O,          O; ]; % Q order -> Acc std, Gyro std, Vel Random Walk, Ang Random Walk, 
+% G = [  O,       O,          O,          O,      O,      O;
+%        ins.CTMbn,  O,       O,          O,      O,      O;
+%        O,       -ins.CTMbn,  O,          O,     O,      O;
+%        O,       O,          eye(3),     O,      O,      O;
+%        O,       O,          O,          eye(3),     O,      O;
+%        O,       O,          O,          O,      O,      O;
+%        0*vbf.CTMab,       0*skew(vbf.v)*vbf.CTMab,O          O,          eye(3),      O;
+%        O,       O,          O,          O,      O,      eye(3); ]; % Q order -> Acc std, Gyro std, Vel Random Walk, Ang Random Walk, 
+
+G = [  O,       O,          O,          O,      O,  O;
+       ins.CTMbn,  O,       O,          O,      O,  O;
+       O,       -ins.CTMbn,  O,          O,     O,  O;
+       O,       O,          eye(3),     O,      O,  O;
+       O,       O,          O,          eye(3),     O,  O;
+       O,       O,          O,          O,      O,  O;
+       O,       O,          O,          O,      eye(3),  O;
+       O,       O,          O,          O,      O,  eye(3);  ];
    
+% G = [  O,       O,          O,          O;
+%        ins.CTMbn,  O,       O,          O;
+%        O,       -ins.CTMbn,  O,          O;
+%        O,       O,          eye(3),     O;
+%        O,       O,          O,          eye(3);
+%        O,       O,          O,          O;
+%        vbf.CTMab,       skew(vbf.v)*vbf.CTMab,          O,          O;
+%        O,       O,          O,          O; ];
+
 end
 
 % % Attitude Transition Matrix

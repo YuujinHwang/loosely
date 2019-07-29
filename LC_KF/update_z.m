@@ -1,12 +1,14 @@
-function kf = update_z(kf, ins, gnss, update_mode)
+function kf = update_z(kf, ins, gnss, vbf, update_mode)
 %UPDATE_Z Summary of this function goes here
 %   Detailed explanation goes here
-if nargin<4, update_mode = 'all';end
+if nargin<5, update_mode = 'all';end
     if strcmp(update_mode, 'all')
         zp = ins.p - gnss.p + ins.CTMbn*gnss.lg';
         zv = ins.v - gnss.v + ins.CTMbn*skew(ins.w)*gnss.lg';
-        
-        kf.z = [zp;zv];
+        % zvb = vbf.dv-[norm(ins.v)-vbf.v;0;0];
+        zvb = vbf.CTMab*(ins.CTMbn'*ins.v + skew(ins.w)*vbf.lo) - [norm(ins.v);0;0];
+        % zvb = vbf.CTMab*ins.CTMbn'*ins.v;
+        kf.z = [zp;zv;zvb];
     elseif strcmp(update_mode, 'zupt')
 
     elseif strcmp(update_mode, 'zaru')
