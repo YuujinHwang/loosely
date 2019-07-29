@@ -56,14 +56,12 @@ Fvbdw = zeros(3);
 O = zeros(3);
 
 %%%%%%%%%%%%%%CHECK CHECK CHECK 
-F = [ Fpp,      Fpv,        Fpr,        O,          O,          O,     O,      O;
-      Fvp,      Fvv,        Fvr,        ins.CTMbn,  O,          O,     O,      O;
-      Frp,      Frv,        Frr,        O,          -ins.CTMbn, O,     O,      O;
-      O,        O,          O,          O,          O,          O,     O,      O;
-      O,        O,          O,          O,          O,          O,     O,      O;
-      O,        O,          O,          O,          O,          O,     O,      O;
-      O,        O,          O,          O,          O,          O,     O,      O;
-      O,        O,          O,          O,          O,          O,     O,      O; ];
+F = [ Fpp,      Fpv,        Fpr,        O,          O,          O;
+      Fvp,      Fvv,        Fvr,        ins.CTMbn,  O,          O;
+      Frp,      Frv,        Frr,        O,          -ins.CTMbn, O;
+      O,        O,          O,          O,          O,          O;
+      O,        O,          O,          O,          O,          O;
+      O,        O,          O,          O,          O,          O;];
 
 % F = [ Fpp,      Fpv,        Fpr,        O,          O,          O,     O;
 %       Fvp,      Fvv,        Fvr,        ins.CTMbn,  O,          O,     O;
@@ -82,14 +80,12 @@ F = [ Fpp,      Fpv,        Fpr,        O,          O,          O,     O,      O
 %        0*vbf.CTMab,       0*skew(vbf.v)*vbf.CTMab,O          O,          eye(3),      O;
 %        O,       O,          O,          O,      O,      eye(3); ]; % Q order -> Acc std, Gyro std, Vel Random Walk, Ang Random Walk, 
 
-G = [  O,       O,          O,          O,      O,  O;
-       ins.CTMbn,  O,       O,          O,      O,  O;
-       O,       -ins.CTMbn,  O,          O,     O,  O;
-       O,       O,          eye(3),     O,      O,  O;
-       O,       O,          O,          eye(3),     O,  O;
-       O,       O,          O,          O,      O,  O;
-       O,       O,          O,          O,      eye(3),  O;
-       O,       O,          O,          O,      O,  eye(3);  ];
+G = [  O,       O,          O,          O;
+       ins.CTMbn,  O,       O,          O;
+       O,       -ins.CTMbn,  O,          O;
+       O,       O,          eye(3),     O;
+       O,       O,          O,          eye(3);
+       O,       O,          O,          O;];
    
 % G = [  O,       O,          O,          O;
 %        ins.CTMbn,  O,       O,          O;

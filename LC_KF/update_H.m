@@ -16,12 +16,10 @@ vb = [vbf.v;0;0];
     W = skew(w);
 
     if strcmp(update_mode, 'all')
-        Hins = [I, O, CTMbn*Lg*CTMbn', O, O, CTMbn, O, O;
-            O, I, -CTMbn*(Lg*W - W*Lg)*CTMbn', O, -CTMbn*Lg, CTMbn*W, O, O];
-        Hvbf = [O, O, O, O, O, O, skew(CTMab*(CTMbn'*ins.v+skew(ins.w)*vbf.lo)), CTMab*skew(ins.w)];
+        Hins = [I, O, CTMbn*Lg*CTMbn', O, O, CTMbn;
+            O, I, -CTMbn*(Lg*W - W*Lg)*CTMbn', O, -CTMbn*Lg, CTMbn*W];
 
-        H = [Hins;
-            Hvbf];
+        H = [Hins];
         % H = [I, O, O, O, O, CTMbn;
         %      O, I, O, O, O, O];
     elseif strcmp(update_mode, 'zupt')

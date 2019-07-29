@@ -1,8 +1,8 @@
 function vbf = vbf_comp(error_s, vbf, ins)
 
     % dv = error_s(19:21);
-    dr = error_s(19:21);
-    dlo = error_s(22:24);
+    dr = error_s(1:3);
+    dlo = error_s(4:6);
     %% Velocity Correction
     vbf.v = norm(ins.v);
     vbf.lo = vbf.lo - dlo;

@@ -49,8 +49,8 @@ sol.vb = zeros(1,DLEN);
 sol.rb = zeros(3,DLEN);
 sol.dvb = zeros(3,DLEN);
 sol.drb = zeros(3,DLEN);
-sol.P = zeros(24*24, DLEN);
-sol.K = zeros(24*9, DLEN);
+sol.P = zeros(18*18, DLEN);
+sol.K = zeros(18*6, DLEN);
 
 % [MisSensX, MisSensY, MisSensZ, OffSensAX, OffSensAY, OffSensAZ, OffSensRX, OffSensRY, OffSensRZ, CalibInitErr] = calibInit(carsim_data.wgx.Time, carsim_data.asx.data, carsim_data.asy.data, carsim_data.asz.data, carsim_data.wsx.data, carsim_data.wsy.data, carsim_data.wsz.data, carsim_data.Vx.data, carsim_data.Psi.data, carsim_data.Pgx.data, carsim_data.Pgy.data);
 
@@ -81,12 +81,18 @@ vbf.lo = [-1.8, 0.0, 0.0]';
 vbf.CTMab = Euler_to_CTM(vbf.r)';
 vbf.qua = Euler_to_Qua(vbf.r);
 
-kf.x = [ zeros(1,9), ins.ab_dyn', ins.wb_dyn', zeros(1,3), zeros(1,3)]';
-kf.P = diag([10*gnss.stdp, 5*gnss.stdv, 0.1*[1,1,1], 1000*imu.stdab, 1000*imu.stdwb, 5*gnss.stdlg, 100*vbf.stdmis, vbf.stdlo].^2);
+kf.x = [ zeros(1,9), ins.ab_dyn', ins.wb_dyn', zeros(1,3)]';
+kf.P = diag([10*gnss.stdp, 5*gnss.stdv, 0.1*[1,1,1], 1000*imu.stdab, 1000*imu.stdwb, 5*gnss.stdlg].^2);
 
-kf.R = diag([gnss.stdp, gnss.stdv, vbf.stdnhc].^2);
+MAkf.x = [zeros(1,3), zeros(1,3)]';
+MAkf.P = diag([100*vbf.stdmis, vbf.stdlo].^2);
+
+kf.R = diag([gnss.stdp, gnss.stdv].^2);
 % kf.Q = diag([imu.stda, imu.stdw, imu.stdab, imu.stdwb].^2);
-kf.Q = diag([imu.stda, imu.stdw, imu.stdab, imu.stdwb, 0.01*vbf.stdmis, 0.05*vbf.stdlo].^2);
+kf.Q = diag([imu.stda, imu.stdw, imu.stdab, imu.stdwb].^2);
+
+MAkf.R = diag([vbf.stdnhc].^2);
+MAkf.Q = diag([0.01*vbf.stdmis, 0.05*vbf.stdlo].^2);
 sol.t(1) = carsim_data.wgx.time(1);
 
 for i = 2:DLEN
@@ -108,25 +114,33 @@ for i = 2:DLEN
     vbf = vbf_update(vbf, ins, dt);    
     %% Kalman Filter
     
-    kf.x(1:24) = 0;
+    kf.x(1:18) = 0;
     
     [kf.F, kf.G] = update_F(ins,imu, vbf);
     kf.H = update_H(ins, gnss, vbf);
     
+    [MAkf.F, MAkf.G] = MA_update_F(ins,imu, vbf);
+    MAkf.H = MA_update_H(ins, gnss, vbf);
+    
+
     kf = predict(kf, dt);
     kf = update_z(kf, ins, gnss, vbf);
     kf = correct(kf);
+
+    MAkf = predict(kf, dt);
+    MAkf = MA_update_z(kf, ins, gnss, vbf);
+    MAkf = correct(kf);
     
     % %% INS Correction
     
     ins = pvt_comp(kf.x, ins);
     ins.CTMbn = Euler_to_CTM(ins.r)';
     gnss.lg = gnss.lg - kf.x(16:18)';
-    vbf = vbf_comp(kf.x, vbf, ins);
+    vbf = vbf_comp(MAkf.x, vbf, ins);
 
     sol.z(:,i) = kf.z;
     sol.p(:,i) = ins.p;
-    sol.K(:,i) = reshape(kf.K', 24*9, 1);
+    sol.K(:,i) = reshape(kf.K', 18*6, 1);
     sol.dp(:,i) = kf.x(1:3);
     sol.dv(:,i) = kf.x(4:6);
     sol.dr(:,i) = kf.x(7:9);
@@ -141,12 +155,12 @@ for i = 2:DLEN
     sol.wb(:,i) = ins.wb_dyn;
     sol.lg(:,i) = gnss.lg;
     sol.dlg(:,i) = kf.x(16:18);
-    sol.P(:,i) = reshape(kf.P, 24*24, 1);
+    sol.P(:,i) = reshape(kf.P, 18*18, 1);
     sol.vb(:,i) = vbf.v;
     sol.rb(:,i) = vbf.r;
     sol.lo(:,i) = vbf.lo;
-    sol.drb(:,i) = kf.x(19:21);
-    sol.dlo(:,i) = kf.x(22:24);
+    sol.drb(:,i) = MAkf.x(1:3);
+    sol.dlo(:,i) = MAkf.x(4:6);
     % sol.drb(:,i) = kf.x(22:24);
     sol.avbf(:,i) = vbf.f;
     sol.wvbf(:,i) = vbf.w;
@@ -154,6 +168,6 @@ for i = 2:DLEN
     sol.res(:,i) = vbf.res;
     sol.alpha1(:,i) = vbf.alpha1;
     sol.alpha2(:,i) = vbf.alpha2;
-    sol.sig3(:,i) = abs(sol.P(1:25:end,i).^(0.5)).*3;
+    sol.sig3(:,i) = abs(sol.P(1:19:end,i).^(0.5)).*3;
     
 end
