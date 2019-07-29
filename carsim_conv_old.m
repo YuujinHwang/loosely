@@ -25,7 +25,7 @@ gnss.stdlg = [0.2, 0.2, 0.2];
 
 vbf.stdnhc = 5*[1, 1, 1];
 vbf.stdkin = 1*[1, 1, 1];
-vbf.stdmis = 0.01*[0*1, 1, 1];
+vbf.stdmis = 0.01*[1, 1, 1];
 vbf.stdlo = [0.5, 0.2, 0.2];
 
 %% Initialize States
@@ -76,7 +76,7 @@ ins.g = [0,0,9.8]';
 
 % vbf.v = [norm(ins.v); 0; 0];
 vbf.v = norm(ins.v);
-vbf.r = [-0.0, -0.05, 0.05]';
+vbf.r = [0.1, -0.05, 0.05]';
 vbf.lo = [-1.8, 0.0, 0.0]';
 vbf.CTMab = Euler_to_CTM(vbf.r)';
 vbf.qua = Euler_to_Qua(vbf.r);
@@ -85,15 +85,21 @@ kf.x = [ zeros(1,9), ins.ab_dyn', ins.wb_dyn', zeros(1,3)]';
 kf.P = diag([10*gnss.stdp, 5*gnss.stdv, 0.1*[1,1,1], 1000*imu.stdab, 1000*imu.stdwb, 5*gnss.stdlg].^2);
 
 MAkf.x = [zeros(1,3), zeros(1,3)]';
-MAkf.P = diag([100*vbf.stdmis, vbf.stdlo].^2);
+MAkf.P = diag([10*vbf.stdmis, vbf.stdlo].^2);
 
 kf.R = diag([gnss.stdp, gnss.stdv].^2);
 % kf.Q = diag([imu.stda, imu.stdw, imu.stdab, imu.stdwb].^2);
 kf.Q = diag([imu.stda, imu.stdw, imu.stdab, imu.stdwb].^2);
 
+MAkf.Q = diag([0.5*vbf.stdmis, 0.05*vbf.stdlo].^2);
 MAkf.R = diag([vbf.stdnhc].^2);
-MAkf.Q = diag([0.01*vbf.stdmis, 0.05*vbf.stdlo].^2);
 sol.t(1) = carsim_data.wgx.time(1);
+
+MAmode = 'horizontal';
+if MAmode == 'horizontal';
+    MAkf.R = diag([vbf.stdnhc, 0.1*vbf.stdnhc].^2);
+end
+
 
 for i = 2:DLEN
     %% Get Data Frame
@@ -115,21 +121,21 @@ for i = 2:DLEN
     %% Kalman Filter
     
     kf.x(1:18) = 0;
-    
+    MAkf.x(1:6) = 0;
     [kf.F, kf.G] = update_F(ins,imu, vbf);
     kf.H = update_H(ins, gnss, vbf);
     
     [MAkf.F, MAkf.G] = MA_update_F(ins,imu, vbf);
-    MAkf.H = MA_update_H(ins, gnss, vbf);
+    MAkf.H = MA_update_H(ins, gnss, vbf, MAmode);
     
 
     kf = predict(kf, dt);
     kf = update_z(kf, ins, gnss, vbf);
     kf = correct(kf);
 
-    MAkf = predict(kf, dt);
-    MAkf = MA_update_z(kf, ins, gnss, vbf);
-    MAkf = correct(kf);
+    MAkf = predict(MAkf, dt);
+    MAkf = MA_update_z(MAkf, ins, gnss, vbf,MAmode);
+    MAkf = correct(MAkf);
     
     % %% INS Correction
     
