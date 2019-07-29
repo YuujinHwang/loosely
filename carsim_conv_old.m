@@ -7,9 +7,9 @@ imu.stda = [0.15, 0.15, 0.15];
 % Std turn-rate 0.01 rad/s
 imu.stdw = [0.01, 0.01, 0.01];
 % Std acceleration bias 
-imu.stdab = 1000*[1, 1, 1]*1e-6;
+imu.stdab = [1, 1, 1]*1e-4;
 % Std turn-rate bias
-imu.stdwb = 100*[1, 1, 1]*1e-6;
+imu.stdwb = [1, 1, 1]*1e-4;
 
 
 
@@ -19,7 +19,7 @@ gnss.stdp = [1.5, 1.5, 2.5];
 % Velocity Dilution of Precision
 gnss.stdv = [0.2, 0.2, 0.3];
 % GPS ant position (approx)
-gnss.lg = [0.0,0.0,0.0];
+gnss.lg = [0.0,-0.4,0.0];
 % GPS ant position deviation
 gnss.stdlg = [0.2, 0.2, 0.2];
 
@@ -56,14 +56,14 @@ sol.K = zeros(18*6, DLEN);
 
 % ins.ab_dyn = [OffSensAX,OffSensAY,OffSensAZ]';
 ins.ab_dyn = [0, 0, -0]';
-ins.ab_dyn_init = [0.2,0.3,-0.2]';
+ins.ab_dyn_init = 0*[0.2,0.1,-0.2]';
 % ins.wb_dyn = [OffSensRX,OffSensRY,OffSensRZ]';
 ins.wb_dyn = [0.0,0.0,-0.0]';
-ins.wb_dyn_init = [-0.02,0.03,0.05]';
+ins.wb_dyn_init = 0*[-0.02,0.03,0.02]';
 
 
 % ins.r = [MisSensX, MisSensY, MisSensZ]';
-ins.r = [0,0,-2.5]';
+ins.r = [0,0,-0.1]';
 [imu, gnss] = simulationframe_old(imu, gnss, carsim_data, 1, ins.ab_dyn_init, ins.wb_dyn_init);
 % ins.r = [0,0,0]';
 ins.CTMnb = Euler_to_CTM(ins.r);
@@ -82,7 +82,7 @@ vbf.CTMab = Euler_to_CTM(vbf.r)';
 vbf.qua = Euler_to_Qua(vbf.r);
 
 kf.x = [ zeros(1,9), ins.ab_dyn', ins.wb_dyn', zeros(1,3)]';
-kf.P = diag([10*gnss.stdp, 5*gnss.stdv, 0.1*[1,1,1], 1000*imu.stdab, 1000*imu.stdwb, 5*gnss.stdlg].^2);
+kf.P = diag([10*gnss.stdp, 5*gnss.stdv, 0.1*[1,1,1], 1*imu.stdab, 1*imu.stdwb, gnss.stdlg].^2);
 
 MAkf.x = [zeros(1,3), zeros(1,3)]';
 MAkf.P = diag([10*vbf.stdmis, vbf.stdlo].^2);
@@ -96,7 +96,7 @@ MAkf.R = diag([vbf.stdnhc].^2);
 sol.t(1) = carsim_data.wgx.time(1);
 
 MAmode = 'horizontal';
-if MAmode == 'horizontal';
+if strcmp(MAmode,'horizontal');
     MAkf.R = diag([vbf.stdnhc, 0.1*vbf.stdnhc].^2);
 end
 
@@ -140,7 +140,6 @@ for i = 2:DLEN
     % %% INS Correction
     
     ins = pvt_comp(kf.x, ins);
-    ins.CTMbn = Euler_to_CTM(ins.r)';
     gnss.lg = gnss.lg - kf.x(16:18)';
     vbf = vbf_comp(MAkf.x, vbf, ins);
 

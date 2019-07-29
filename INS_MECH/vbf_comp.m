@@ -12,4 +12,4 @@ function vbf = vbf_comp(error_s, vbf, ins)
     vbf.qua = vbf.qua / norm(vbf.qua);       % Brute-force normalization
 
     vbf.CTMab = Qua_to_CTM(vbf.qua);
-    vbf.r = vbf.r + dr;
+    vbf.r = CTM_to_Euler(vbf.CTMab');

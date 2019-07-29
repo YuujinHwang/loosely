@@ -11,14 +11,14 @@ dwb = error_s(13:15);
 
 %% Attitude Correction
 antm = [0 ins.qua(3) -ins.qua(2); -ins.qua(3) 0 ins.qua(1); ins.qua(2) -ins.qua(1) 0];
-ins.qua = ins.qua + 0.5 .* [ins.qua(4)*eye(3) + antm; -1.*[ins.qua(1) ins.qua(2) ins.qua(3)]] * dr(1:3);
+ins.qua = ins.qua + 0.5 .* [ins.qua(4)*eye(3) + antm; -1.*[ins.qua(1) ins.qua(2) ins.qua(3)]] * (dr(1:3));
 ins.qua = ins.qua / norm(ins.qua);       % Brute-force normalization
 
 % dq = Euler_to_Qua(dr);
 % ins.qua = attqua_update(qua, dq);
 
 ins.CTMbn = Qua_to_CTM(ins.qua);
-ins.r = ins.r + dr;
+ins.r = CTM_to_Euler(ins.CTMbn');
 
 %% Velocity Correction
 % v : velocity NED m/s^2
