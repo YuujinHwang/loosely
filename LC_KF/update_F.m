@@ -81,8 +81,8 @@ F = [ Fpp,      Fpv,        Fpr,        O,          O,          O;
 %        O,       O,          O,          O,      O,      eye(3); ]; % Q order -> Acc std, Gyro std, Vel Random Walk, Ang Random Walk, 
 
 G = [  O,       O,          O,          O;
-       ins.CTMbn,  O,       O,          O;
-       O,       -ins.CTMbn,  O,          O;
+       -ins.CTMbn,  O,       O,          O;
+       O,       ins.CTMbn,  O,          O;
        O,       O,          eye(3),     O;
        O,       O,          O,          eye(3);
        O,       O,          O,          O;];

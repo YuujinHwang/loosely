@@ -7,7 +7,7 @@ imu.stda = [0.15, 0.15, 0.15];
 % Std turn-rate 0.01 rad/s
 imu.stdw = [0.01, 0.01, 0.01];
 % Std acceleration bias 
-imu.stdab = [1, 1, 1]*1e-4;
+imu.stdab = [1, 1, 1]*1e-3;
 % Std turn-rate bias
 imu.stdwb = [1, 1, 1]*1e-4;
 
@@ -19,7 +19,7 @@ gnss.stdp = [1.5, 1.5, 2.5];
 % Velocity Dilution of Precision
 gnss.stdv = [0.2, 0.2, 0.3];
 % GPS ant position (approx)
-gnss.lg = [0.0,-0.4,0.0];
+gnss.lg = [0.0,0.4,0.0];
 % GPS ant position deviation
 gnss.stdlg = [0.2, 0.2, 0.2];
 
@@ -56,18 +56,21 @@ sol.K = zeros(18*6, DLEN);
 
 % ins.ab_dyn = [OffSensAX,OffSensAY,OffSensAZ]';
 ins.ab_dyn = [0, 0, -0]';
-ins.ab_dyn_init = 0*[0.2,0.1,-0.2]';
+ins.ab_dyn_init = [0.2,0.1,-0.2]';
 % ins.wb_dyn = [OffSensRX,OffSensRY,OffSensRZ]';
 ins.wb_dyn = [0.0,0.0,-0.0]';
-ins.wb_dyn_init = 0*[-0.02,0.03,0.02]';
+ins.wb_dyn_init = [-0.02,0.03,0.02]';
+
+vbf.misalign = [0.05,-0.1,0.1];
+vbf.CTMma = Euler_to_CTM(vbf.misalign);
 
 
 % ins.r = [MisSensX, MisSensY, MisSensZ]';
-ins.r = [0,0,-0.1]';
-[imu, gnss] = simulationframe_old(imu, gnss, carsim_data, 1, ins.ab_dyn_init, ins.wb_dyn_init);
+ins.r = [0,0,-2.5]';
+[imu, gnss] = simulationframe_old(imu, gnss, carsim_data, 1, ins.ab_dyn_init, ins.wb_dyn_init, vbf.CTMma);
 % ins.r = [0,0,0]';
 ins.CTMnb = Euler_to_CTM(ins.r);
-ins.qua = Euler_to_Qua(ins.r);
+ins.qua = CTM_to_Qua(ins.CTMnb');
 ins.CTMbn = ins.CTMnb';
 ins.p = gnss.p + ins.CTMbn*gnss.lg';
 ins.v = gnss.v - ins.CTMbn*skew(gnss.lg')*imu.wr;
@@ -75,6 +78,7 @@ ins.v = gnss.v - ins.CTMbn*skew(gnss.lg')*imu.wr;
 ins.g = [0,0,9.8]';
 
 % vbf.v = [norm(ins.v); 0; 0];
+
 vbf.v = norm(ins.v);
 vbf.r = [0.1, -0.05, 0.05]';
 vbf.lo = [-1.8, 0.0, 0.0]';
@@ -82,7 +86,7 @@ vbf.CTMab = Euler_to_CTM(vbf.r)';
 vbf.qua = Euler_to_Qua(vbf.r);
 
 kf.x = [ zeros(1,9), ins.ab_dyn', ins.wb_dyn', zeros(1,3)]';
-kf.P = diag([10*gnss.stdp, 5*gnss.stdv, 0.1*[1,1,1], 1*imu.stdab, 1*imu.stdwb, gnss.stdlg].^2);
+kf.P = diag([10*gnss.stdp, 5*gnss.stdv, 0.1*[1,1,1], 100*imu.stdab, 100*imu.stdwb, gnss.stdlg].^2);
 
 MAkf.x = [zeros(1,3), zeros(1,3)]';
 MAkf.P = diag([10*vbf.stdmis, vbf.stdlo].^2);
@@ -105,7 +109,7 @@ for i = 2:DLEN
     %% Get Data Frame
     sol.t(i) = carsim_data.wgx.time(i);
     dt = sol.t(i) - sol.t(i-1);
-    [imu, gnss] = simulationframe_old(imu, gnss, carsim_data, i, ins.ab_dyn_init, ins.wb_dyn_init);
+    [imu, gnss] = simulationframe_old(imu, gnss, carsim_data, i, ins.ab_dyn_init, ins.wb_dyn_init, vbf.CTMma);
     
     %% INS
     % Print procedure
@@ -173,6 +177,6 @@ for i = 2:DLEN
     sol.res(:,i) = vbf.res;
     sol.alpha1(:,i) = vbf.alpha1;
     sol.alpha2(:,i) = vbf.alpha2;
-    sol.sig3(:,i) = abs(sol.P(1:19:end,i).^(0.5)).*3;
+    sol.sig3(:,i) = [abs(sol.P(1:19:end,i).^(0.5)).*3; MAkf.P(1:7:end)'];
     
 end
