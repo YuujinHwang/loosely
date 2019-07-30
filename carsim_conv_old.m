@@ -89,13 +89,13 @@ kf.x = [ zeros(1,9), ins.ab_dyn', ins.wb_dyn', zeros(1,3)]';
 kf.P = diag([10*gnss.stdp, 5*gnss.stdv, 0.1*[1,1,1], 100*imu.stdab, 100*imu.stdwb, gnss.stdlg].^2);
 
 MAkf.x = [zeros(1,3), zeros(1,3)]';
-MAkf.P = diag([10*vbf.stdmis, vbf.stdlo].^2);
+MAkf.P = diag([1*vbf.stdmis, vbf.stdlo].^2);
 
 kf.R = diag([gnss.stdp, gnss.stdv].^2);
 % kf.Q = diag([imu.stda, imu.stdw, imu.stdab, imu.stdwb].^2);
 kf.Q = diag([imu.stda, imu.stdw, imu.stdab, imu.stdwb].^2);
 
-MAkf.Q = diag([0.5*vbf.stdmis, 0.05*vbf.stdlo].^2);
+MAkf.Q = diag([0.1*vbf.stdmis, 0.01*vbf.stdlo].^2);
 MAkf.R = diag([vbf.stdnhc].^2);
 sol.t(1) = carsim_data.wgx.time(1);
 

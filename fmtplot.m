@@ -3,7 +3,7 @@ title('Position XY')
 grid on
 plot(sol.p(1,:), sol.p(2,:)); hold;
 plot(carsim_data.Pgx.data, carsim_data.Pgy.data);hold;
-legend('X', 'Y', 'Z')
+legend('X', 'Y')
 figure;
 title('Position Error')
 grid on
