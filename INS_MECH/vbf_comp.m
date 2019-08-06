@@ -13,3 +13,6 @@ function vbf = vbf_comp(error_s, vbf, ins)
 
     vbf.CTMab = Qua_to_CTM(vbf.qua);
     vbf.r = CTM_to_Euler(vbf.CTMab');
+
+    vbf.v3 = vbf.CTMab*ins.CTMbn'*ins.v;
+    vbf.beta = atan2(vbf.v3(2), vbf.v3(1));

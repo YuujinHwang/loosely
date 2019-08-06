@@ -3,9 +3,9 @@
 
 %% Set IMU characteristics
 % Std acceleration 0.1 m/s2
-imu.stda = [0.15, 0.15, 0.15];
+imu.stda = [1.5, 1.5, 1.5]*1e-4;
 % Std turn-rate 0.01 rad/s
-imu.stdw = [0.01, 0.01, 0.01];
+imu.stdw = [1.0, 1.0, 1.0]*1e-4;
 % Std acceleration bias 
 imu.stdab = [1, 1, 1]*1e-3;
 % Std turn-rate bias
@@ -21,7 +21,7 @@ gnss.stdv = [0.2, 0.2, 0.3];
 % GPS ant position (approx)
 gnss.lg = [0.0,0.4,0.0];
 % GPS ant position deviation
-gnss.stdlg = [0.2, 0.2, 0.2];
+gnss.stdlg = 0.001*[0.2, 0.2, 0.2];
 
 vbf.stdnhc = 5*[1, 1, 1];
 vbf.stdkin = 1*[1, 1, 1];
@@ -56,17 +56,17 @@ sol.K = zeros(18*6, DLEN);
 
 % ins.ab_dyn = [OffSensAX,OffSensAY,OffSensAZ]';
 ins.ab_dyn = [0, 0, -0]';
-ins.ab_dyn_init = [0.2,0.1,-0.2]';
+ins.ab_dyn_init = 0*[0.05,0.05,-0.05]';
 % ins.wb_dyn = [OffSensRX,OffSensRY,OffSensRZ]';
 ins.wb_dyn = [0.0,0.0,-0.0]';
-ins.wb_dyn_init = [-0.02,0.03,0.02]';
+ins.wb_dyn_init = 0*[-0.005,0.008,0.004]';
 
-vbf.misalign = [0.05,-0.1,0.1];
+vbf.misalign = 0*[-0.02,-0.03,0.03];
 vbf.CTMma = Euler_to_CTM(vbf.misalign);
 
 
 % ins.r = [MisSensX, MisSensY, MisSensZ]';
-ins.r = [0,0,-2.5]';
+ins.r = [0,0, -2.5]';
 [imu, gnss] = simulationframe_old(imu, gnss, carsim_data, 1, ins.ab_dyn_init, ins.wb_dyn_init, vbf.CTMma);
 % ins.r = [0,0,0]';
 ins.CTMnb = Euler_to_CTM(ins.r);
@@ -80,18 +80,18 @@ ins.g = [0,0,9.8]';
 % vbf.v = [norm(ins.v); 0; 0];
 
 vbf.v = norm(ins.v);
-vbf.r = [0.1, -0.05, 0.05]';
+vbf.r = [0.00, -0.00, 0.00]';
 vbf.lo = [-1.8, 0.0, 0.0]';
 vbf.CTMab = Euler_to_CTM(vbf.r)';
 vbf.qua = Euler_to_Qua(vbf.r);
 
 kf.x = [ zeros(1,9), ins.ab_dyn', ins.wb_dyn', zeros(1,3)]';
-kf.P = diag([10*gnss.stdp, 5*gnss.stdv, 0.1*[1,1,1], 100*imu.stdab, 100*imu.stdwb, gnss.stdlg].^2);
+kf.P = diag([10*gnss.stdp, 5*gnss.stdv, 0.01*[1,1,1], imu.stdab, imu.stdwb, gnss.stdlg].^2);
 
 MAkf.x = [zeros(1,3), zeros(1,3)]';
 MAkf.P = diag([1*vbf.stdmis, vbf.stdlo].^2);
 
-kf.R = diag([gnss.stdp, gnss.stdv].^2);
+kf.R = 0.25*diag([gnss.stdp, gnss.stdv].^2);
 % kf.Q = diag([imu.stda, imu.stdw, imu.stdab, imu.stdwb].^2);
 kf.Q = diag([imu.stda, imu.stdw, imu.stdab, imu.stdwb].^2);
 
@@ -121,26 +121,29 @@ for i = 2:DLEN
     ins.f = ins.CTMbn*ins.a - ins.g;
     ins.v = vel_update(ins.f, ins.v, dt);
     ins.p = pos_update(ins.p, ins.v, dt);
-    vbf = vbf_update(vbf, ins, dt);    
+    vbf = vbf_update(vbf, ins, dt);
+
     %% Kalman Filter
     
     kf.x(1:18) = 0;
     MAkf.x(1:6) = 0;
-    [kf.F, kf.G] = update_F(ins,imu, vbf);
-    kf.H = update_H(ins, gnss, vbf);
+    if mod(i,10)==0
+        [kf.F, kf.G] = update_F(ins,imu, vbf);
+        kf.H = update_H(ins, gnss, vbf);
+        
+        [MAkf.F, MAkf.G] = MA_update_F(ins,imu, vbf);
+        MAkf.H = MA_update_H(ins, gnss, vbf, MAmode);
     
-    [MAkf.F, MAkf.G] = MA_update_F(ins,imu, vbf);
-    MAkf.H = MA_update_H(ins, gnss, vbf, MAmode);
+   
+        kf = predict(kf, 10*dt);
+        kf = update_z(kf, ins, gnss, vbf);
+        kf = correct(kf);
+   
     
-
-    kf = predict(kf, dt);
-    kf = update_z(kf, ins, gnss, vbf);
-    kf = correct(kf);
-
-    MAkf = predict(MAkf, dt);
-    MAkf = MA_update_z(MAkf, ins, gnss, vbf,MAmode);
-    MAkf = correct(MAkf);
-    
+        MAkf = predict(MAkf, 10*dt);
+        MAkf = MA_update_z(MAkf, ins, gnss, vbf,MAmode);
+        MAkf = correct(MAkf);
+    end
     % %% INS Correction
     
     ins = pvt_comp(kf.x, ins);
@@ -178,5 +181,6 @@ for i = 2:DLEN
     sol.alpha1(:,i) = vbf.alpha1;
     sol.alpha2(:,i) = vbf.alpha2;
     sol.sig3(:,i) = [abs(sol.P(1:19:end,i).^(0.5)).*3; MAkf.P(1:7:end)'];
+    sol.beta(:,i) = vbf.beta;
     
 end
