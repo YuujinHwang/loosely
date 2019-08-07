@@ -6,11 +6,15 @@ function [imu,gnss] = simulationframe(imu, gnss, carsim_data, time, ab_dyn, wb_d
     % gnss.p = [carsim_data.Pgx.data(time), carsim_data.Pgy.data(time), carsim_data.Pgz.data(time)]';
     % gnss.v = [carsim_data.Vgx.data(time), carsim_data.Vgy.data(time), carsim_data.Vgz.data(time)]';
     
-    imu.ar = CTMma*[carsim_data.asx.data(time), carsim_data.asy.data(time), carsim_data.asz.data(time)]'+ab_dyn+0.01*(rand(3,1)-0.5);
-    imu.wr = CTMma*[carsim_data.wsx.data(time), carsim_data.wsy.data(time), carsim_data.wsz.data(time)]'+wb_dyn+0.001*(rand(3,1)-0.5);
+    imu.ar = CTMma*[carsim_data.asx.data(time), carsim_data.asy.data(time), carsim_data.asz.data(time)]'+ab_dyn+0.05*(rand(3,1)-0.5);
+    imu.wr = CTMma*[carsim_data.wsx.data(time), carsim_data.wsy.data(time), carsim_data.wsz.data(time)]'+wb_dyn+0.003*(rand(3,1)-0.5);
     gnss.p = [carsim_data.Pgx.data(time), carsim_data.Pgy.data(time), carsim_data.Pgz.data(time)]'+0.1*(rand(3,1)-0.5);
     gnss.v = [carsim_data.Vgx.data(time), carsim_data.Vgy.data(time), carsim_data.Vgz.data(time)]'+0.02*(rand(3,1)-0.5);
     
+    % imu.ar = imu.fb(i,:);
+    % imu.wr = imu.wb(i,:);
+    % gnss.p = gnss.P(i,:);
+
     end
     
     

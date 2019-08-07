@@ -7,8 +7,7 @@ function H = update_H(ins, gnss, vbf, update_mode)
     w = ins.w;
     CTMbn = ins.CTMbn;
     CTMab = vbf.CTMab;
-    vb = [vbf.v;0;0];
-    
+    vnhc = [vbf.v;0;0];
     if nargin<4, update_mode = 'nhc'; end    
         if strcmp(update_mode, 'nhc')
             Hvb = [skew(CTMab*(CTMbn'*ins.v+skew(ins.w)*vbf.lo)), CTMab*skew(ins.w)];
@@ -18,6 +17,13 @@ function H = update_H(ins, gnss, vbf, update_mode)
             Hpsi = [skew(vbf.CTMab*(ins.CTMbn'*ins.w)), O];
             H = [Hvb;
                 Hpsi;];
+        elseif strcmp(update_mode, 'kinematic')
+            Hvb = [skew(CTMab*(CTMbn'*ins.v+skew(ins.w)*vbf.lo)), CTMab*skew(ins.w)];
+            Hpsi = [skew(vbf.CTMab*(ins.CTMbn'*ins.w)), O];
+            Hkin = [skew(vbf.vb), O, O];
+            H = [Hvb;
+                Hpsi;
+                Hkin];
         elseif strcmp(update_mode, 'zaru')
         end
     end
