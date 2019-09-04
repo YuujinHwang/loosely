@@ -3,9 +3,14 @@ function vbf = vbf_update(vbf, ins, dt)
 
     vbf.f = vbf.CTMab*(ins.CTMbn'*ins.f);
     vbf.w = vbf.CTMab*(ins.w);
+    try
+        vbf.dv = -skew(vbf.w)*vbf.vb + vbf.f;
+        vbf.dv = vbf.dv*dt;
+        vbf.vb = vbf.vb + vbf.dv;
+    catch
+        vbf.dv = ins.v;
 
-    vbf.dv = -skew(vbf.w)*[vbf.v;0;0] + vbf.f;
-    vbf.dv = vbf.dv*dt;
+    end
     % vbf.v = vbf.v + vbf.dv*dt;
 
     % a = vbf.dv(1);

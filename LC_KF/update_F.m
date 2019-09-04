@@ -1,4 +1,4 @@
-function [F, G] = update_F(ins, imu, vbf)
+function [F, G] = update_F(ins, imu)
 %LC_KF_F : Pre-calculate Transition Matrix F
 %          kf - Kalman Filter Object
 %               x - State Vector (18x1)

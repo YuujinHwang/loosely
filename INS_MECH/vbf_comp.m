@@ -3,6 +3,7 @@ function vbf = vbf_comp(error_s, vbf, ins)
     % dv = error_s(19:21);
     dr = error_s(1:3);
     dlo = error_s(4:6);
+    
     %% Velocity Correction
     vbf.v = norm(ins.v);
     vbf.lo = vbf.lo - dlo;
@@ -14,5 +15,9 @@ function vbf = vbf_comp(error_s, vbf, ins)
     vbf.CTMab = Qua_to_CTM(vbf.qua);
     vbf.r = CTM_to_Euler(vbf.CTMab');
 
-    vbf.v3 = vbf.CTMab*ins.CTMbn'*ins.v;
-    vbf.beta = atan2(vbf.v3(2), vbf.v3(1));
+
+    
+    % dv = error_s(7:9);
+    vbf.vb = vbf.CTMab*ins.CTMbn'*ins.v;
+    % vbf.vb = vbf.vb - dv;
+    vbf.beta = atan2(vbf.vb(2), vbf.vb(1));

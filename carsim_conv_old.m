@@ -106,6 +106,7 @@ if strcmp(MAmode,'horizontal');
     MAkf.R = diag([vbf.stdnhc, 0.01*vbf.stdnhc].^2);
 elseif strcmp(MAmode, 'kinematic');
     MAkf.R = diag([vbf.stdnhc, 0.01*vbf.stdnhc, [10, 1, 1]*1e-4].^2);
+    MAkf.x = [MAkf.x;zeros(3,1)];
 end
 
 
@@ -130,8 +131,8 @@ for i = 2:DLEN
 
     %% Kalman Filter
     
-    kf.x(1:18) = 0;
-    MAkf.x(1:6) = 0;
+    kf.x(1:end) = 0;
+    MAkf.x(1:end) = 0;
     % [kf.F, kf.G] = update_F(ins,imu, dt);
     % kf.H = update_H(ins, gnss, vbf);
         
