@@ -27,9 +27,9 @@ figure;
 title('Attitude Error')
 grid on
 hold;
-plot(sol.t, sol.r(1,:)-carsim_data.Phi.data', 'b', sol.t, sol.sig3(7,:), '--b', sol.t, -sol.sig3(7,:), '--b');
-plot(sol.t, sol.r(2,:)-carsim_data.Theta.data', 'r', sol.t, sol.sig3(8,:), '--r', sol.t, -sol.sig3(8,:), '--r');
-plot(sol.t, unwrap(sol.r(3,:))-carsim_data.Psi.data', 'g', sol.t, sol.sig3(9,:), '--g', sol.t,- sol.sig3(9,:), '--g');
+plot(sol.t, sol.r(1,:)-carsim_data.Phi.data'-vbf.misalign(1), 'b', sol.t, sol.sig3(7,:), '--b', sol.t, -sol.sig3(7,:), '--b');
+plot(sol.t, sol.r(2,:)-carsim_data.Theta.data'-vbf.misalign(2), 'r', sol.t, sol.sig3(8,:), '--r', sol.t, -sol.sig3(8,:), '--r');
+plot(sol.t, unwrap(sol.r(3,:))-carsim_data.Psi.data'-vbf.misalign(3), 'g', sol.t, sol.sig3(9,:), '--g', sol.t,- sol.sig3(9,:), '--g');
 hold;
 legend('X', '\sigma_X', '\sigma_X','Y',  '\sigma_Y', '\sigma_Y','Z','\sigma_Z', '\sigma_Z')
 figure;

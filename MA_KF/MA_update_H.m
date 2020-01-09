@@ -18,11 +18,12 @@ function H = update_H(ins, gnss, vbf, update_mode)
             H = [Hvb;
                 Hpsi;];
         elseif strcmp(update_mode, 'kinematic')
-            Hvb = [skew(CTMab*(CTMbn'*ins.v+skew(ins.w)*vbf.lo)), CTMab*skew(ins.w), O];
+            % Hvb = [skew(CTMab*(CTMbn'*ins.v+skew(ins.w)*vbf.lo)), CTMab*skew(ins.w), O];
+            Hvb = [CTMab*skew(ins.CTMbn'*ins.v)*CTMab'-skew(vbf.lo)*CTMab*skew(ins.w)*CTMab', CTMab*skew(ins.w)*CTMab', O];
             Hpsi = [skew(vbf.CTMab*(ins.CTMbn'*ins.w)), O, O];
             Hkin = [-skew(vbf.CTMab*ins.CTMbn'*ins.v), O, O];
             
-            % Hkin = [O, O, -skew(vbf.CTMab*ins.CTMbn'*ins.v)];
+            % Hkin = [skew(vbf.CTMab*ins.CTMbn'*ins.v+vbf.CTMab*skew(ins.w)*ins.v-vbf.CTMab*ins.f), O, O];
             H = [Hvb;
                 Hpsi;
                 Hkin];

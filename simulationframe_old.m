@@ -10,7 +10,8 @@ function [imu,gnss] = simulationframe(imu, gnss, carsim_data, time, ab_dyn, wb_d
     imu.wr = CTMma*[carsim_data.wsx.data(time), carsim_data.wsy.data(time), carsim_data.wsz.data(time)]'+wb_dyn+0.003*(rand(3,1)-0.5);
     gnss.p = [carsim_data.Pgx.data(time), carsim_data.Pgy.data(time), carsim_data.Pgz.data(time)]'+1*(rand(3,1)-0.5);
     gnss.v = [carsim_data.Vgx.data(time), carsim_data.Vgy.data(time), carsim_data.Vgz.data(time)]'+0.2*(rand(3,1)-0.5);
-    
+    gnss.cog = atan2d(gnss.v(2),gnss.v(1));
+
     % imu.ar = imu.fb(i,:);
     % imu.wr = imu.wb(i,:);
     % gnss.p = gnss.P(i,:);
