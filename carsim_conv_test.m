@@ -28,7 +28,7 @@ imu.stdwb = [1, 1, 1]*1e-5;
 
 %% Set GNSS characteristics
 % Position Dilution of Precision
-gnss.stdp = [2.5, 2.5, 3.5];
+gnss.stdp = 0.25*[2.5, 2.5, 3.5];
 % Velocity Dilution of Precision
 gnss.stdv = 0.5*[0.2, 0.2, 0.3];
 % GPS ant position (approx)
@@ -279,6 +279,7 @@ for i = 2:DLEN
     sol.MAk(:,i) = reshape(MAkf.K',9*9,1);
     sol.z(:,i) = kf.z;
     sol.p(:,i) = ins.p;
+    sol.pg(:,i) = gnss.p;
     sol.K(:,i) = reshape(kf.K', 18*6, 1);
     sol.dp(:,i) = kf.x(1:3);
     sol.dv(:,i) = kf.x(4:6);

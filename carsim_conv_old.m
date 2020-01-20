@@ -19,13 +19,13 @@ gnss.stdp = [1.5, 1.5, 2.5];
 % Velocity Dilution of Precision
 gnss.stdv = [0.2, 0.2, 0.3];
 % GPS ant position (approx)
-gnss.lg = [0,0.0,0.0];
+gnss.lg = [0,0.4,0.0];
 % GPS ant position deviation
-gnss.stdlg = 10*[0.2, 0.2, 0.2];
+gnss.stdlg = [0.2, 0.2, 0.2];
 
 vbf.stdnhc = [1, 1, 1];
 vbf.stdkin = [1, 1, 1];
-vbf.stdmis = 0.01*[1, 1, 1];
+vbf.stdmis = 0.02*[1, 1, 1];
 vbf.stdlo = 0.5*[0.5, 0.2, 0.2];
 
 %% Initialize States
@@ -62,7 +62,7 @@ ins.ab_dyn_init = [0.02,0.01,-0.02]';
 ins.wb_dyn = [0.0,0.0,-0.0]';
 ins.wb_dyn_init = [-0.005,0.008,0.004]';
 
-vbf.misalign = [0.1,-0.05,0.05];
+vbf.misalign = [0.05,-0.05,0.05];
 % vbf.misalign = [-0.0,-0.0,0.0];
 vbf.CTMma = Euler_to_CTM(vbf.misalign);
 
@@ -167,10 +167,10 @@ for i = 2:DLEN
         gnss.ag = (ins.CTMbn'*gnss.v-gnss.vg)/(sol.t(i)-kf.t);
         gnss.hr = diff(unwrap([deg2rad(gnss.cogp),deg2rad(gnss.cog)]))/(sol.t(i)-kf.t);
         gnss.cogp = gnss.cog;
-        gnss.ag(2) = gnss.ag(2) + gnss.hr*norm(gnss.vg);
+        gnss.ag(2) = -gnss.ag(2) + gnss.hr*norm(gnss.vg);
         gnss.vg = ins.CTMbn'*gnss.v;
-        ins.phi = 0.7*ins.phi + 0.3*atan2((ins.a(2) - gnss.ag(2)),ins.a(3));
-        ins.theta = 0.7*ins.theta + 0.3*atan2(-(ins.a(1)-gnss.ag(1)),norm([ins.a(2), ins.a(3)]));
+        ins.phi = (1-lpgain)*ins.phi + lpgain*atan2((ins.a(2) - gnss.ag(2)),ins.a(3));
+        ins.theta = (1-lpgain)*ins.theta + lpgain*atan2(-(ins.a(1)-gnss.ag(1)),norm([ins.a(2), ins.a(3)]));
         
         thetag = lpgain*(gnss.ag(1) - ins.a(1))/ins.a(3) + (1-lpgain)*thetag;
         phig = -lpgain*(norm(gnss.vg)*gnss.hr - ins.a(2)) / ins.a(3) + (1-lpgain)*phig;
@@ -258,7 +258,7 @@ for i = 2:DLEN
 
     sol.rc(:,i) = cf.r;
     sol.hr(:,i) = gnss.hr;
-    sol.rg(:,i) = [ins.phi, ins.theta, ins.phi2, ins.theta2]';
+    sol.rg(:,i) = [ins.phi, ins.theta, ins.phi2, ins.theta2, chk]';
     % sol.rg(:,i) = [phiw, thetaw, phig+phiw, thetag+thetaw]';
 
     
