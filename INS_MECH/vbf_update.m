@@ -5,7 +5,7 @@ function vbf = vbf_update(vbf, ins, dt, kfdt)
     vbf.g = vbf.CTMab*(ins.CTMbn'*[0,0,9.8]');
     vbf.w = vbf.CTMab*(ins.w);
     if (kfdt)
-        vbf.dv = [0,0,0]';
+        % vbf.dv = [0,0,0]';
     else
         vbf.dv = -skew(vbf.w)*vbf.vb + vbf.f;
         vbf.dv = vbf.dv*dt;

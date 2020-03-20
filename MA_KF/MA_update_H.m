@@ -24,6 +24,7 @@ function H = update_H(ins, gnss, vbf, update_mode)
             Hkin = [-skew(vbf.CTMab*ins.CTMbn'*ins.v), O, O];
             
             % Hkin = [skew(vbf.CTMab*ins.CTMbn'*ins.v+vbf.CTMab*skew(ins.w)*ins.v-vbf.CTMab*ins.f), O, O];
+            Hkin = [skew(CTMab*(ins.f - skew(ins.w)*ins.v)),O,O];
             H = [Hvb;
                 Hpsi;
                 Hkin];

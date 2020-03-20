@@ -25,7 +25,7 @@ gnss.stdlg = [0.2, 0.2, 0.2];
 
 vbf.stdnhc = [1, 1, 1];
 vbf.stdkin = [1, 1, 1];
-vbf.stdmis = 0.02*[1, 1, 1];
+vbf.stdmis = 0.01*[1, 1, 1]*0.000001;
 vbf.stdlo = 0.5*[0.5, 0.2, 0.2];
 
 %% Initialize States
@@ -62,8 +62,8 @@ ins.ab_dyn_init = [0.02,0.01,-0.02]';
 ins.wb_dyn = [0.0,0.0,-0.0]';
 ins.wb_dyn_init = [-0.005,0.008,0.004]';
 
-vbf.misalign = [0.05,-0.05,0.05];
-% vbf.misalign = [-0.0,-0.0,0.0];
+vbf.misalign = [-0.0,-0.0,0.0];
+% vbf.misalign = [-0.1,-0.0,0.0];
 vbf.CTMma = Euler_to_CTM(vbf.misalign);
 
 
@@ -86,13 +86,13 @@ gnss.cogp = atan2d(gnss.v(2),gnss.v(1));
 
 vbf.v = norm(ins.v);
 vbf.r = [0.00, -0.00, 0.00]';
-vbf.lo = [-0, 0.0, 0.0]';
+vbf.lo = [-1.8, 0.0, 0.0]';
 vbf.CTMab = Euler_to_CTM(vbf.r)';
 vbf.qua = Euler_to_Qua(vbf.r);
 
 vbf.vb = [vbf.v;0;0];
 
-cf.vg = gnss.vg;
+cf.vg = gnss.vg; 
 cf.cog = atan2d(gnss.v(2),gnss.v(1));
 cf.CTMbn = ins.CTMbn;
 cf.q = CTM_to_Qua(cf.CTMbn);
@@ -124,8 +124,8 @@ if strcmp(MAmode,'horizontal');
     MAkf.R = diag([vbf.stdnhc, 0.01*vbf.stdnhc].^2);
 elseif strcmp(MAmode, 'kinematic');
     MAkf.P = diag(1*[0.3*vbf.stdmis, vbf.stdlo, vbf.stdmis].^2);
-    MAkf.Q = diag([0.3*vbf.stdmis, vbf.stdlo, vbf.stdkin].^2);
-    MAkf.R = diag(1*[10*vbf.stdnhc, 0.5*vbf.stdnhc, 1000000*vbf.stdkin].^2);
+    MAkf.Q = diag([0.1*vbf.stdmis, vbf.stdlo, vbf.stdkin].^2);
+    MAkf.R = diag([20*vbf.stdnhc, 0.2*vbf.stdnhc, 1000000000*0.005*vbf.stdkin].^2);
     MAkf.x = [MAkf.x;zeros(3,1)];
 end
 
@@ -143,6 +143,7 @@ for i = 2:DLEN
     [ins.a, ins.w] = imu_comp(imu.ar, imu.wr, ins.ab_dyn, ins.wb_dyn, ins.CTMbn);
     [ins.CTMbn, ins.qua, ins.r] = att_update(ins.CTMbn, ins.qua, dt, ins.w, 'quaternion');
     ins.f = ins.CTMbn*ins.a - ins.g;
+    ins.fs = ins.a - ins.CTMbn'*ins.g;
     ins.v = vel_update(ins.f, ins.v, dt);
     ins.p = pos_update(ins.p, ins.v, dt);
     
@@ -182,8 +183,23 @@ for i = 2:DLEN
         kf = update_z(kf, ins, gnss, vbf);
         kf = correct(kf);
         kf.t = sol.t(i);       
+        
         vbf.vb = vbf.CTMab*ins.CTMbn'*ins.v;
         cf = comp_filter(cf,gnss,ins,kf.dt,0.05,0.3);
+        
+        %%%%%%%%%%%%%%
+        ins = pvt_comp(kf.x, ins);
+
+        ins.beta = unwrap(ins.r(3)-atan2(ins.v(2),ins.v(1)));
+        ins.V = norm(ins.v);
+        % ins.dbeta=0;
+        % ins.dV=0;
+        
+    else
+        ins.dbeta = wrapToPi(ins.r(3)-atan2(ins.v(2),ins.v(1))-ins.beta);
+        ins.beta = wrapToPi(ins.r(3)-atan2(ins.v(2),ins.v(1)));
+        ins.dV = norm(ins.v)-ins.V;
+        ins.V = norm(ins.v);
         kf.dt = 0;
     end
     
@@ -210,10 +226,10 @@ for i = 2:DLEN
         MAkf = MA_update_z(MAkf, ins, gnss, vbf,MAmode);
         MAkf = correct(MAkf);
     
-    ins = pvt_comp(kf.x, ins);
+    
     gnss.lg = gnss.lg - kf.x(16:18)';
     vbf = vbf_comp(MAkf.x, vbf, ins);
-
+    
     sol.MAz(:,i) = MAkf.z;
     sol.z(:,i) = kf.z;
     sol.p(:,i) = ins.p;
@@ -229,7 +245,7 @@ for i = 2:DLEN
     sol.vg(:,i) = gnss.vg;
     sol.r(:,i) = ins.r;
     sol.a(:,i) = ins.a;
-    sol.f(:,i) = ins.f;
+    sol.f(:,i) = ins.fs;
     sol.w(:,i) = ins.w;
     sol.ag(:,i) = gnss.ag;
     sol.ab(:,i) = ins.ab_dyn;
@@ -249,6 +265,7 @@ for i = 2:DLEN
     sol.avbf(:,i) = vbf.f;
     sol.wvbf(:,i) = vbf.w;
     sol.dvvbf(:,i) = vbf.dv;
+    sol.dbeta(:,i) = ins.dbeta;
     sol.gb(:,i) = vbf.g;
     % sol.res(:,i) = vbf.res;
     % sol.alpha1(:,i) = vbf.alpha1;
@@ -256,6 +273,7 @@ for i = 2:DLEN
     sol.sig3(:,i) = [abs(sol.P(1:19:end,i).^(0.5)).*3; MAkf.P(1:10:end)'];
     sol.beta(:,i) = vbf.beta;
 
+    sol.dbeta(:,i) = ins.dbeta;
     sol.rc(:,i) = cf.r;
     sol.hr(:,i) = gnss.hr;
     sol.rg(:,i) = [ins.phi, ins.theta, ins.phi2, ins.theta2, chk]';
