@@ -25,7 +25,7 @@ gnss.stdlg = [0.2, 0.2, 0.2];
 
 vbf.stdnhc = [1, 1, 1];
 vbf.stdkin = [1, 1, 1];
-vbf.stdmis = 0.01*[1, 1, 1]*0.000001;
+vbf.stdmis = 0.01*[1, 1, 1]*1;
 vbf.stdlo = 0.5*[0.5, 0.2, 0.2];
 
 %% Initialize States
@@ -62,7 +62,7 @@ ins.ab_dyn_init = [0.02,0.01,-0.02]';
 ins.wb_dyn = [0.0,0.0,-0.0]';
 ins.wb_dyn_init = [-0.005,0.008,0.004]';
 
-vbf.misalign = [-0.0,-0.0,0.0];
+vbf.misalign = [-0.0,-0.0,-0.1];
 % vbf.misalign = [-0.1,-0.0,0.0];
 vbf.CTMma = Euler_to_CTM(vbf.misalign);
 
@@ -125,7 +125,7 @@ if strcmp(MAmode,'horizontal');
 elseif strcmp(MAmode, 'kinematic');
     MAkf.P = diag(1*[0.3*vbf.stdmis, vbf.stdlo, vbf.stdmis].^2);
     MAkf.Q = diag([0.1*vbf.stdmis, vbf.stdlo, vbf.stdkin].^2);
-    MAkf.R = diag([20*vbf.stdnhc, 0.2*vbf.stdnhc, 1000000000*0.005*vbf.stdkin].^2);
+    MAkf.R = diag([20000000*vbf.stdnhc, 20000000*vbf.stdnhc, 5*[1,1,10]].^2);
     MAkf.x = [MAkf.x;zeros(3,1)];
 end
 
@@ -149,7 +149,7 @@ for i = 2:DLEN
     
 
     %% Kalman Filter
-    
+    kf.dt = 0;
     kf.x(1:end) = 0;
     MAkf.x(1:end) = 0;
     % [kf.F, kf.G] = update_F(ins,imu, dt);
@@ -245,7 +245,7 @@ for i = 2:DLEN
     sol.vg(:,i) = gnss.vg;
     sol.r(:,i) = ins.r;
     sol.a(:,i) = ins.a;
-    sol.f(:,i) = ins.fs;
+    sol.f(:,i) = ins.f;
     sol.w(:,i) = ins.w;
     sol.ag(:,i) = gnss.ag;
     sol.ab(:,i) = ins.ab_dyn;
@@ -254,6 +254,7 @@ for i = 2:DLEN
     sol.dlg(:,i) = kf.x(16:18);
     sol.tr(:,i) = trace(kf.P);
     sol.P(:,i) = reshape(kf.P, 18*18, 1);
+    sol.kin(:,i) = [norm(ins.f)*dt, norm(ins.v)*ins.dbeta/dt, 0];
     % sol.vb(:,i) =  vbf.CTMab*ins.CTMbn'*ins.v;
     sol.vb(:,i) = vbf.vb;
     sol.va(:,i) = vbf.va;
@@ -273,7 +274,7 @@ for i = 2:DLEN
     sol.sig3(:,i) = [abs(sol.P(1:19:end,i).^(0.5)).*3; MAkf.P(1:10:end)'];
     sol.beta(:,i) = vbf.beta;
 
-    sol.dbeta(:,i) = ins.dbeta;
+    % sol.dbeta(:,i) = ins.dbeta;
     sol.rc(:,i) = cf.r;
     sol.hr(:,i) = gnss.hr;
     sol.rg(:,i) = [ins.phi, ins.theta, ins.phi2, ins.theta2, chk]';

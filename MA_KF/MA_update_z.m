@@ -1,6 +1,7 @@
 function kf = update_z(kf, ins, gnss, vbf, update_mode)
     %UPDATE_Z Summary of this function goes here
     %   Detailed explanation goes here
+    dt = 0.01;
     if nargin<5, update_mode = 'nhc';end
         if strcmp(update_mode, 'nhc')
             zvb = vbf.CTMab*(ins.CTMbn'*ins.v) + skew(vbf.w)*vbf.lo - [norm(ins.v);0;0];
@@ -14,11 +15,12 @@ function kf = update_z(kf, ins, gnss, vbf, update_mode)
             zvb = vbf.CTMab*(ins.CTMbn'*ins.v) + skew(vbf.w)*vbf.lo - [norm(ins.v);0;0];
             % zvb = vbf.vb + skew(vbf.w)*vbf.lo-[norm(ins.v);0;0];
             zpsi = vbf.CTMab*(ins.CTMbn'*ins.w) - [0;0;sign(ins.w(3))*norm(ins.w)];
-            if (norm(vbf.dv)==0)
-                zv3 = [0,0,0]';
-            else
-                zv3 = vbf.dv - [ins.dV, -ins.dbeta*ins.V,0]';
-            end
+            % if (kf.dt == 0)
+            zv3 = [sum(ins.v.*ins.f)./norm(ins.v), -norm(ins.v)*ins.dbeta/dt, 0]'-vbf.dv/dt;
+                
+            % else
+            %     zv3 = [0,0,0]';
+            % end
             % zv3 = vbf.vb - vbf.CTMab*ins.CTMbn'*ins.v;
 
             kf.z = [zvb;
