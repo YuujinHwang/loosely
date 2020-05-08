@@ -7,9 +7,9 @@ imu.stda = [1.5, 1.5, 1.5]*1e-1;
 % Std turn-rate 0.01 rad/s
 imu.stdw = [1.0, 1.0, 1.0]*1e-2;
 % Std acceleration bias 
-imu.stdab = [1, 1, 1]*1e-3;
+imu.stdab = 1*[1, 1, 1]*1e-3;
 % Std turn-rate bias
-imu.stdwb = [1, 1, 1]*1e-4;
+imu.stdwb = 1*[1, 1, 1]*1e-4;
 
 
 
@@ -25,8 +25,8 @@ gnss.stdlg = [0.2, 0.2, 0.2];
 
 vbf.stdnhc = [1, 1, 1];
 vbf.stdkin = [1, 1, 1];
-vbf.stdmis = 0.01*[1, 1, 1]*1;
-vbf.stdlo = 0.5*[0.5, 0.2, 0.2];
+vbf.stdmis = 0.1*[1, 1, 1]*1;
+vbf.stdlo = 0.1*[0.5, 0.2, 0.2];
 
 %% Initialize States
 
@@ -57,12 +57,12 @@ sol.K = zeros(18*6, DLEN);
 
 % ins.ab_dyn = [OffSensAX,OffSensAY,OffSensAZ]';
 ins.ab_dyn = [0, 0, -0]';
-ins.ab_dyn_init = [0.02,0.01,-0.02]';
+ins.ab_dyn_init = [0.2,0.1,-0.2]';
 % ins.wb_dyn = [OffSensRX,OffSensRY,OffSensRZ]';
 ins.wb_dyn = [0.0,0.0,-0.0]';
-ins.wb_dyn_init = [-0.005,0.008,0.004]';
+ins.wb_dyn_init = [-0.01,0.008,0.004]';
 
-vbf.misalign = [-0.0,-0.0,-0.1];
+vbf.misalign = [0.1,0.1,0.1];
 % vbf.misalign = [-0.1,-0.0,0.0];
 vbf.CTMma = Euler_to_CTM(vbf.misalign);
 
@@ -103,7 +103,7 @@ cf.d = [0;0;0];
 cf.ei = [0;0;0];
 
 kf.x = [ zeros(1,9), ins.ab_dyn', ins.wb_dyn', zeros(1,3)]';
-kf.P = diag([10*gnss.stdp, 5*gnss.stdv, 0.1*[1,1,1], 100*imu.stdab, 100*imu.stdwb, gnss.stdlg].^2);
+kf.P = diag([gnss.stdp, gnss.stdv, 0.1*[1,1,1], 100*imu.stdab*10, 100*imu.stdwb*1, gnss.stdlg].^2);
 kf.t = 0;
 kf.K = zeros(18,6);
 
@@ -123,9 +123,9 @@ MAmode = 'kinematic';
 if strcmp(MAmode,'horizontal');
     MAkf.R = diag([vbf.stdnhc, 0.01*vbf.stdnhc].^2);
 elseif strcmp(MAmode, 'kinematic');
-    MAkf.P = diag(1*[0.3*vbf.stdmis, vbf.stdlo, vbf.stdmis].^2);
-    MAkf.Q = diag([0.1*vbf.stdmis, vbf.stdlo, vbf.stdkin].^2);
-    MAkf.R = diag([20000000*vbf.stdnhc, 20000000*vbf.stdnhc, 5*[1,1,10]].^2);
+    MAkf.P = diag(1*[5*vbf.stdmis, vbf.stdlo, vbf.stdmis].^2);
+    MAkf.Q = diag([0.02*vbf.stdmis, 5*vbf.stdlo, vbf.stdkin].^2);
+    MAkf.R = diag([100*vbf.stdnhc, 2*0.5*vbf.stdnhc*1, 10*[1,1,1]*1].^2);
     MAkf.x = [MAkf.x;zeros(3,1)];
 end
 

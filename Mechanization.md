@@ -76,3 +76,19 @@ $\begin{bmatrix}
     a & b \\\\ b & c
 \end{bmatrix}$
 
+
+
+
+$
+\begin{aligned}
+\delta\beta &= \beta - \hat{\beta} \\
+\dot{\delta\beta} &= \dot{\beta} - \dot{\hat{\beta}} \\
+&= \frac{d}{dt}(\psi_{vel} - \psi) - \frac{\dot{\hat{v_y}}}{\hat{v_x}} \\ 
+&= \dot{\beta} - \frac{\hat{C_a^b}f - [\hat{C_a^b}w]\hat{C_a^b}V}{\hat{C_a^b}V}\\
+a_{tan, sensor} &= cos(\hat{\beta})\hat{a_{x}} + sin(\hat{\beta})\hat{a_y} \\
+a_{tan} &= \frac{d}{dt}||V_{gps}|| \\
+a_{cent, sensor} &= -sin(\hat{\beta})\hat{a_{x}} + cos(\hat{\beta})\hat{a_y} \\
+a_{cent} &= ||V_{gps}|| \frac{d}{dt}(\hat{\psi}-\hat{\beta})\\
+H &= [\hat{C_a^b}(a_{ins}-\hat{C_n^a}g_n)-\hat{C_a^b}(\omega_a \times v_a)]_{\times}
+\end{aligned}
+$

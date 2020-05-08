@@ -8,15 +8,15 @@ function kf = update_z(kf, ins, gnss, vbf, update_mode)
             kf.z = [zvb];
         elseif strcmp(update_mode, 'horizontal')
             zvb = vbf.CTMab*(ins.CTMbn'*ins.v) + skew(vbf.w)*vbf.lo - [norm(ins.v);0;0];
-            zpsi = vbf.CTMab*(ins.CTMbn'*ins.w) - [0;0;sign(ins.w(3))*norm(ins.w)];
+            zpsi = vbf.CTMab*(ins.w) - [0;0;sign(ins.w(3))*norm(ins.w)];
             kf.z = [zvb;
                     zpsi];
         elseif strcmp(update_mode, 'kinematic')
             zvb = vbf.CTMab*(ins.CTMbn'*ins.v) + skew(vbf.w)*vbf.lo - [norm(ins.v);0;0];
             % zvb = vbf.vb + skew(vbf.w)*vbf.lo-[norm(ins.v);0;0];
-            zpsi = vbf.CTMab*(ins.CTMbn'*ins.w) - [0;0;sign(ins.w(3))*norm(ins.w)];
+            zpsi = vbf.CTMab*(ins.w) - [0;0;sign(ins.w(3))*norm(ins.w)];
             % if (kf.dt == 0)
-            zv3 = [sum(ins.v.*ins.f)./norm(ins.v), -norm(ins.v)*ins.dbeta/dt, 0]'-vbf.dv/dt;
+            zv3 = vbf.dv/dt-[sum(ins.v.*ins.f)./norm(ins.v), -norm(ins.v)*ins.dbeta/dt, 0]';
                 
             % else
             %     zv3 = [0,0,0]';
