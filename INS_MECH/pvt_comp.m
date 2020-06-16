@@ -32,8 +32,10 @@ p_n = ins.p - dp;
 ins.p = p_n;
 ins.va = ins.CTMbn'*ins.v;
 
-ins.ab_dyn = ins.ab_dyn + dab;
-ins.wb_dyn = ins.wb_dyn + dwb;
+% ins.ab_dyn = ins.ab_dyn + dab;
+% ins.wb_dyn = ins.wb_dyn + dwb;
+ins.ab_dyn = dab;
+ins.wb_dyn = dwb;
 end
 
 function qua_n = attqua_update(qua, dq)

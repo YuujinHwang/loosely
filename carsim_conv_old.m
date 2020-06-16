@@ -1,4 +1,11 @@
 
+phiw = 0; thetaw = 0;
+ins.phi = 0; ins.theta=0;
+ins.phi2 = 0; ins.theta2=0;
+phig = 0; thetag = 0;
+vbf.dv = [0,0,0]';
+ins.dbeta = 0;
+
 %% Set Time Stamp
 
 %% Set IMU characteristics
@@ -91,6 +98,7 @@ vbf.CTMab = Euler_to_CTM(vbf.r)';
 vbf.qua = Euler_to_Qua(vbf.r);
 
 vbf.vb = [vbf.v;0;0];
+vbf.dvins = [0;0;0];
 
 cf.vg = gnss.vg; 
 cf.cog = atan2d(gnss.v(2),gnss.v(1));
@@ -124,7 +132,7 @@ if strcmp(MAmode,'horizontal');
     MAkf.R = diag([vbf.stdnhc, 0.01*vbf.stdnhc].^2);
 elseif strcmp(MAmode, 'kinematic');
     MAkf.P = diag(1*[5*vbf.stdmis, vbf.stdlo, vbf.stdmis].^2);
-    MAkf.Q = diag([0.02*vbf.stdmis, 5*vbf.stdlo, vbf.stdkin].^2);
+    MAkf.Q = diag([0.05*vbf.stdmis, 5*vbf.stdlo, vbf.stdkin].^2);
     MAkf.R = diag([100*vbf.stdnhc, 2*0.5*vbf.stdnhc*1, 10*[1,1,1]*1].^2);
     MAkf.x = [MAkf.x;zeros(3,1)];
 end
@@ -150,7 +158,8 @@ for i = 2:DLEN
 
     %% Kalman Filter
     kf.dt = 0;
-    kf.x(1:end) = 0;
+    kf.x(1:9) = 0;
+    kf.x(16:18) = 0;
     MAkf.x(1:end) = 0;
     % [kf.F, kf.G] = update_F(ins,imu, dt);
     % kf.H = update_H(ins, gnss, vbf);
@@ -163,7 +172,10 @@ for i = 2:DLEN
 
     phiw = (1-lpgain)*(phiw + dt*(ins.w(1)+ins.theta2*ins.w(3)));
     thetaw = (1-lpgain)*(thetaw + dt*(ins.w(2)-ins.phi2*ins.w(3)));
-    
+    kf.dt = dt;
+    [kf.F, kf.G] = update_F(ins,imu);
+    kf.H = update_H(ins, gnss);
+
     if (i<10 | mod(i,10)==0)
         gnss.ag = (ins.CTMbn'*gnss.v-gnss.vg)/(sol.t(i)-kf.t);
         gnss.hr = diff(unwrap([deg2rad(gnss.cogp),deg2rad(gnss.cog)]))/(sol.t(i)-kf.t);
@@ -177,10 +189,10 @@ for i = 2:DLEN
         phig = -lpgain*(norm(gnss.vg)*gnss.hr - ins.a(2)) / ins.a(3) + (1-lpgain)*phig;
         chk = sum(ins.a.^2)/(ins.a'*[gnss.ag(1), gnss.hr*norm(gnss.vg), 9.8]');
         kf.dt = sol.t(i) - kf.t;
-        [kf.F, kf.G] = update_F(ins,imu);
-        kf.H = update_H(ins, gnss, vbf);
+%         [kf.F, kf.G] = update_F(ins,imu);
+%         kf.H = update_H(ins, gnss, vbf);
         kf = predict(kf, kf.dt);
-        kf = update_z(kf, ins, gnss, vbf);
+        kf = update_z(kf, ins, gnss);
         kf = correct(kf);
         kf.t = sol.t(i);       
         

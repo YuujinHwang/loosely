@@ -23,5 +23,5 @@ function vbf = vbf_comp(error_s, vbf, ins)
     vbf.beta = atan2(vbf.vb(2), vbf.vb(1));
     % vbf.vb = vbf.CTMab*ins.CTMbn'*ins.v;
 
-    vbf.va = vbf.vb + skew(vbf.CTMab*ins.w)*vbf.lo;
+%     vbf.va = vbf.vb + skew(vbf.CTMab*ins.w)*vbf.lo;
     
